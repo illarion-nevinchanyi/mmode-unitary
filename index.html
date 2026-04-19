@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>m-mode unitary decomposition</title>
+    <style>
+      :root {
+        font-family: system-ui, sans-serif;
+        line-height: 1.45;
+        color: #1a1a1a;
+        background: #f6f6f4;
+      }
+      body {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 1.25rem 1rem 3rem;
+      }
+      h1 {
+        font-size: 1.35rem;
+        font-weight: 650;
+        margin: 0 0 0.5rem;
+      }
+      p.lead {
+        margin: 0 0 1rem;
+        color: #444;
+        font-size: 0.95rem;
+      }
+      fieldset {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 0.75rem 1rem 1rem;
+        margin-bottom: 1rem;
+        background: #fff;
+      }
+      legend {
+        padding: 0 0.35rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+      label {
+        display: inline-block;
+        margin-right: 0.35rem;
+        font-size: 0.88rem;
+      }
+      input[type="number"],
+      input[type="text"] {
+        padding: 0.35rem 0.5rem;
+        border: 1px solid #bbb;
+        border-radius: 4px;
+        font-size: 0.9rem;
+      }
+      textarea {
+        width: 100%;
+        min-height: 140px;
+        box-sizing: border-box;
+        font-family: ui-monospace, monospace;
+        font-size: 0.78rem;
+        padding: 0.5rem;
+        border: 1px solid #bbb;
+        border-radius: 4px;
+        resize: vertical;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.25rem;
+        align-items: center;
+        margin-bottom: 0.65rem;
+      }
+      button {
+        padding: 0.45rem 0.9rem;
+        border-radius: 6px;
+        border: 1px solid #333;
+        background: #222;
+        color: #fff;
+        font-size: 0.9rem;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      button.secondary {
+        background: #fff;
+        color: #222;
+      }
+      #status {
+        font-size: 0.88rem;
+        margin: 0.5rem 0;
+        min-height: 1.25rem;
+        color: #333;
+      }
+      #status.error {
+        color: #a30;
+      }
+      #status.ok {
+        color: #063;
+      }
+      .out-block {
+        margin-top: 0.75rem;
+        padding: 0.65rem 0.75rem;
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 0.78rem;
+        overflow-x: auto;
+        max-height: 420px;
+        overflow-y: auto;
+      }
+      .out-block h3 {
+        margin: 0 0 0.5rem;
+        font-size: 0.85rem;
+      }
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .step {
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e8e8e8;
+      }
+      .step:last-child {
+        border-bottom: none;
+      }
+      code.hint {
+        font-size: 0.75rem;
+        color: #555;
+      }
+      .matrix-wrap {
+        overflow: auto;
+        max-width: 100%;
+        max-height: min(70vh, 520px);
+        margin-top: 0.35rem;
+        border: 1px solid #d0d0d0;
+        border-radius: 6px;
+        background: #fafaf8;
+      }
+      table.cmat {
+        border-collapse: collapse;
+        font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
+        font-size: 0.72rem;
+        margin: 0.35rem auto;
+      }
+      table.cmat th.corner {
+        border: none;
+        background: transparent;
+        width: 1.5rem;
+      }
+      table.cmat th.col-head,
+      table.cmat th.row-head {
+        font-weight: 600;
+        color: #666;
+        padding: 0.2rem 0.35rem;
+        border: 1px solid #e0e0e0;
+        background: #f0f0ec;
+      }
+      table.cmat td {
+        padding: 0.28rem 0.45rem;
+        border: 1px solid #ddd;
+        text-align: right;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      table.cmat tbody tr:nth-child(even) td {
+        background: #fff;
+      }
+      table.cmat tbody tr:nth-child(odd) td {
+        background: #fcfcfa;
+      }
+      .circuit-toolbar {
+        margin-bottom: 0.5rem;
+        align-items: center;
+      }
+      .circuit-toolbar label.circuit-toggle {
+        font-size: 0.9rem;
+        cursor: pointer;
+        user-select: none;
+      }
+      .circuit-toolbar input {
+        margin-right: 0.35rem;
+        vertical-align: middle;
+      }
+      #circuitDiagramArea {
+        min-height: 0;
+      }
+      .circuit-wrap {
+        overflow: auto;
+        max-width: 100%;
+        max-height: min(65vh, 720px);
+        border: 1px solid #d0d0d0;
+        border-radius: 8px;
+        background: #fafaf8;
+        padding: 0.5rem 0.25rem;
+      }
+      .circuit-wrap svg {
+        display: block;
+        min-width: min-content;
+      }
+      section.refs {
+        margin-top: 2rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid #ddd;
+        font-size: 0.88rem;
+        color: #333;
+        line-height: 1.5;
+      }
+      section.refs h2 {
+        font-size: 1rem;
+        font-weight: 650;
+        margin: 0 0 0.5rem;
+      }
+      section.refs p {
+        margin: 0 0 0.5rem;
+      }
+      section.refs a {
+        color: #0b5;
+        word-break: break-all;
+      }
+      section.page-credit {
+        margin-top: 1.25rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid #e8e8e8;
+      }
+      /* \tilde{Q}_{k}^{\dagger} — embedded block per step */
+      span.qtd {
+        font-family: ui-serif, "Times New Roman", "STIX Two Text", Times, serif;
+        font-weight: 650;
+        white-space: nowrap;
+      }
+      span.qtd sup {
+        font-size: 0.72em;
+        font-weight: 650;
+        line-height: 0;
+      }
+      span.qtd sub {
+        font-size: 0.72em;
+        font-weight: 650;
+        line-height: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>m-mode unitary decomposition</h1>
+    <p class="lead">
+      Decompose an <em>n</em>×<em>n</em> unitary <strong>U</strong> using the m-mode (RQ / Tetris)
+      procedure. The page shows embedded
+      <span
+        class="qtd"
+        title="Step k: \tilde{Q}_{k}^{\dagger} (n×n embed)"
+        ><strong>Q&#x303;<sub>k</sub><sup>&dagger;</sup></strong></span
+      >
+      per step as tables; raw JSON is available via download. Final
+      <strong>D</strong> is shown below. Runs locally in your browser (Pyodide +
+      NumPy). Serve this folder over HTTP (see below); <code>file://</code> may block loading.
+    </p>
+
+    <fieldset>
+      <legend>Parameters</legend>
+      <div class="row">
+        <label>n <input type="number" id="n" value="4" min="2" max="256" /></label>
+        <label>m <input type="number" id="m" value="3" min="2" max="256" /></label>
+        <label>tol <input type="text" id="tol" value="1e-12" style="width: 6rem" /></label>
+      </div>
+      <div class="row">
+        <label
+          >random seed (optional)
+          <input type="text" id="seed" placeholder="empty = random" style="width: 10rem"
+        /></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Unitary matrix U (JSON)</legend>
+      <p class="hint">
+        Format: each complex entry as <code>[re, im]</code>, rows as JSON arrays. Example 2×2
+        identity:
+        <code
+          >[[[1,0],[0,0]],[[0,0],[1,0]]]</code
+        >
+        — or real-only <code>[[1,0],[0,1]]</code>.
+      </p>
+      <textarea id="matrix" spellcheck="false"></textarea>
+      <div class="row" style="margin-top: 0.5rem">
+        <button type="button" id="btnRandom" disabled>Fill random unitary U</button>
+        <button type="button" id="btnRun" disabled>Run decomposition</button>
+        <button type="button" class="secondary" id="btnDownload" disabled>
+          Download full result (JSON)
+        </button>
+        <button type="button" class="secondary" id="btnDownloadMatrices" disabled>
+          Download matrices (JSON)
+        </button>
+      </div>
+    </fieldset>
+
+    <div id="status">Loading Pyodide…</div>
+
+    <fieldset id="summaryBox" style="display: none">
+      <legend>Summary</legend>
+      <pre id="summary"></pre>
+    </fieldset>
+
+    <fieldset id="circuitBox" style="display: none">
+      <legend>m-mode circuit (schematic)</legend>
+      <div class="row circuit-toolbar">
+        <label class="circuit-toggle"
+          ><input type="checkbox" id="circuitShow" checked /> Show diagram</label
+        >
+        <button type="button" class="secondary" id="btnCircuitSvg" disabled>Download SVG</button>
+        <button type="button" class="secondary" id="btnCircuitPng" disabled>Download PNG</button>
+      </div>
+      <p class="hint">
+        Horizontal lines are modes (1…<em>n</em>); each column is one gate (step <em>k</em> =
+        <span class="qtd">Q&#x303;<sub>k</sub><sup>&dagger;</sup></span>). Boxes span the active
+        <code>cols</code>; the label is the RQ block size <em>m</em>′×<em>m</em>′ with
+        <em>m</em>′ = <code>len(cols)</code>. Wide or tall diagrams scroll inside the frame; hide the
+        diagram above if the page feels too heavy.
+      </p>
+      <div id="circuitDiagramArea">
+        <div id="circuitSvgWrap" class="circuit-wrap"></div>
+      </div>
+    </fieldset>
+
+    <fieldset id="stepsBox" style="display: none">
+      <legend>
+        Steps — embedded
+        <span class="qtd" title="\tilde{Q}_{k}^{\dagger}">Q&#x303;<sub>k</sub><sup>&dagger;</sup></span>
+        (n×n)
+      </legend>
+      <p class="hint">
+        Each step lists active column indices <code>cols</code>. Step <em>k</em> uses
+        <code>\tilde{Q}_{k}^{\dagger}</code> (embedded <em>n</em>×<em>n</em>). Entries are
+        <em>a</em> ± <em>b</em>i. Use the download buttons for JSON.
+      </p>
+      <div id="steps"></div>
+    </fieldset>
+
+    <fieldset id="dBox" style="display: none">
+      <legend>D (final reduced matrix)</legend>
+      <div id="dOut"></div>
+    </fieldset>
+
+    <section class="refs" aria-labelledby="refs-heading">
+      <h2 id="refs-heading">Reference</h2>
+      <p>
+        The embedded-block m-mode decomposition used in this tool is described in the following
+        article (see also the
+        <a href="https://doi.org/10.1103/PhysRevResearch.6.L012043">publisher page</a> for the
+        official version):
+      </p>
+      <p>
+        J. Arends <i>et al.</i>, “Decomposing large unitaries into multimode devices of arbitrary
+        size,” <i>Phys. Rev. Research</i> <b>6</b>, L012043 (2024).
+        <a href="https://doi.org/10.1103/PhysRevResearch.6.L012043"
+          >https://doi.org/10.1103/PhysRevResearch.6.L012043</a
+        >
+      </p>
+    </section>
+
+    <section class="refs page-credit" aria-labelledby="about-heading">
+      <h2 id="about-heading">About this page</h2>
+      <p>
+        This interactive tool was implemented by <strong>Illarion Nevinchanyi</strong> (student,
+        TU Wien). Contact:
+        <a href="mailto:e11844409@student.tuwien.ac.at">e11844409@student.tuwien.ac.at</a>. A public
+        source repository may be linked here once it is published.
+      </p>
+    </section>
+
+    <p style="font-size: 0.82rem; color: #666; margin-top: 1.5rem">
+      Local preview:
+      <code>cd Photonics/unitary_decomposition_web && python -m http.server 8765</code>
+      then open <code>http://127.0.0.1:8765/</code>.
+    </p>
+
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js"></script>
+    <script>
+      const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v0.27.0/full/";
+      const statusEl = document.getElementById("status");
+      const matrixEl = document.getElementById("matrix");
+      const nEl = document.getElementById("n");
+      const mEl = document.getElementById("m");
+      const tolEl = document.getElementById("tol");
+      const seedEl = document.getElementById("seed");
+      const btnRandom = document.getElementById("btnRandom");
+      const btnRun = document.getElementById("btnRun");
+      const btnDownload = document.getElementById("btnDownload");
+      const btnDownloadMatrices = document.getElementById("btnDownloadMatrices");
+      const summaryBox = document.getElementById("summaryBox");
+      const summaryEl = document.getElementById("summary");
+      const circuitBox = document.getElementById("circuitBox");
+      const circuitDiagramArea = document.getElementById("circuitDiagramArea");
+      const circuitSvgWrap = document.getElementById("circuitSvgWrap");
+      const circuitShow = document.getElementById("circuitShow");
+      const btnCircuitSvg = document.getElementById("btnCircuitSvg");
+      const btnCircuitPng = document.getElementById("btnCircuitPng");
+      const stepsBox = document.getElementById("stepsBox");
+      const stepsEl = document.getElementById("steps");
+      const dBox = document.getElementById("dBox");
+      const dOut = document.getElementById("dOut");
+
+      let pyodide = null;
+      let lastResultJson = null;
+
+      /**
+       * @param {number} k - 1-based step index (matches “Step k”)
+       * @returns {string} HTML for \\tilde{Q}_{k}^{\\dagger}
+       */
+      function qtdHtmlForStepIndex(k) {
+        return (
+          '<span class="qtd" title="\\tilde{Q}_{' +
+          k +
+          '}^{\\dagger}">Q&#x303;<sub>' +
+          k +
+          "</sub><sup>&dagger;</sup></span>"
+        );
+      }
+
+      function setStatus(msg, cls) {
+        statusEl.textContent = msg;
+        statusEl.className = cls || "";
+      }
+
+      /** @param {number} re @param {number} im @param {number} [digits=4] */
+      function formatComplexCell(re, im, digits) {
+        const d = digits === undefined ? 4 : digits;
+        const eps = 1e-12;
+        const r = Number(re);
+        const i = Number(im);
+        if (Math.abs(i) < eps) {
+          return r.toFixed(d);
+        }
+        if (Math.abs(r) < eps) {
+          return (i >= 0 ? "" : "−") + Math.abs(i).toFixed(d) + " i";
+        }
+        const imAbs = Math.abs(i);
+        const imSign = i >= 0 ? " + " : " − ";
+        return r.toFixed(d) + imSign + imAbs.toFixed(d) + " i";
+      }
+
+      /**
+       * @param {number[][][]} mat - rows of [re, im] pairs
+       * @returns {string} HTML table
+       */
+      function renderComplexMatrixHTML(mat) {
+        if (!mat || !mat.length) {
+          return '<p class="hint">(empty)</p>';
+        }
+        const nrows = mat.length;
+        const ncols = mat[0] ? mat[0].length : 0;
+        let h =
+          '<div class="matrix-wrap"><table class="cmat" aria-label="complex matrix"><thead><tr><th class="corner"></th>';
+        for (let j = 0; j < ncols; j++) {
+          h += '<th scope="col" class="col-head">' + (j + 1) + "</th>";
+        }
+        h += "</tr></thead><tbody>";
+        for (let i = 0; i < nrows; i++) {
+          h += '<tr><th scope="row" class="row-head">' + (i + 1) + "</th>";
+          for (let j = 0; j < ncols; j++) {
+            const cell = mat[i][j];
+            const zr = cell[0];
+            const zi = cell[1];
+            h += "<td>" + formatComplexCell(zr, zi) + "</td>";
+          }
+          h += "</tr>";
+        }
+        h += "</tbody></table></div>";
+        return h;
+      }
+
+      /**
+       * Paper-style m-mode schematic (matches notebook draw_mmode_circuit): modes as horizontal
+       * lines, one rounded box per gate with mm×mm label.
+       * @param {number} n
+       * @param {{ cols: number[] }[]} steps
+       */
+      function renderMmodeCircuitSVG(n, steps) {
+        const L = steps.length;
+        if (L === 0) {
+          return '<p class="hint">No gates in this decomposition.</p>';
+        }
+        const tab10 = [
+          "#1f77b4",
+          "#ff7f0e",
+          "#2ca02c",
+          "#d62728",
+          "#9467bd",
+          "#8c564b",
+          "#e377c2",
+          "#7f7f7f",
+          "#bcbd22",
+          "#17becf",
+        ];
+        const padL = 52;
+        const padR = 28;
+        const padT = 36;
+        const padB = 52;
+        const gateW = Math.max(38, Math.min(68, Math.floor(780 / Math.max(L, 1))));
+        const dy = 34;
+        const lineX0 = padL;
+        const lineX1 = padL + L * gateW;
+        /* Lines at i=0..n−1; gates extend ±0.42 in mode units (same as notebook FancyBboxPatch). */
+        const plotSpan = (Math.max(0, n - 1) + 0.42) * dy;
+        const titleH = 22;
+        const W = padL + L * gateW + padR;
+        const H = padT + titleH + plotSpan + padB;
+
+        let s = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="m-mode circuit schematic">`;
+        s += `<text x="${W / 2}" y="20" text-anchor="middle" font-size="13" font-weight="600" fill="#1a1a1a" font-family="system-ui, sans-serif">m-mode circuit (n=${n}, ${L} gate${L === 1 ? "" : "s"})</text>`;
+
+        const y0 = padT + titleH;
+        for (let i = 0; i < n; i++) {
+          const y = y0 + i * dy;
+          s += `<line x1="${lineX0}" y1="${y}" x2="${lineX1}" y2="${y}" stroke="#595959" stroke-width="1.15"/>`;
+          s += `<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="#333" font-family="system-ui, sans-serif">${i + 1}</text>`;
+        }
+
+        for (let k = 0; k < L; k++) {
+          const cols = steps[k].cols;
+          const mm = cols.length;
+          const cmin = Math.min.apply(null, cols);
+          const cmax = Math.max.apply(null, cols);
+          const yLo = cmin - 0.42;
+          const yHi = cmax + 0.42;
+          const x = padL + k * gateW;
+          const boxW = gateW * 0.92;
+          const xRect = x + (gateW - boxW) / 2;
+          const yTop = y0 + yLo * dy;
+          const hRect = (yHi - yLo) * dy;
+          const col = tab10[k % 10];
+          s += `<rect x="${xRect}" y="${yTop}" width="${boxW}" height="${hRect}" rx="7" ry="7" fill="${col}" fill-opacity="0.5" stroke="#333" stroke-width="1.2"/>`;
+          s += `<text x="${x + gateW / 2}" y="${yTop + hRect / 2 + 4}" text-anchor="middle" font-size="10" font-weight="600" fill="#0a0a0a" font-family="system-ui, sans-serif">${mm}×${mm}</text>`;
+          s += `<text x="${x + gateW / 2}" y="${H - 18}" text-anchor="middle" font-size="10" fill="#555" font-family="system-ui, sans-serif">${k + 1}</text>`;
+        }
+
+        s += `<text x="${(padL + lineX1) / 2}" y="${H - 4}" text-anchor="middle" font-size="11" fill="#444" font-family="system-ui, sans-serif">gate index (step k)</text>`;
+        s += `<text x="12" y="${y0 + plotSpan / 2}" text-anchor="middle" font-size="11" fill="#444" font-family="system-ui, sans-serif" transform="rotate(-90 12 ${y0 + plotSpan / 2})">mode</text>`;
+        s += "</svg>";
+        return s;
+      }
+
+      function setCircuitDownloadEnabled(on) {
+        btnCircuitSvg.disabled = !on;
+        btnCircuitPng.disabled = !on;
+      }
+
+      function updateCircuitDiagramVisibility() {
+        circuitDiagramArea.style.display = circuitShow.checked ? "block" : "none";
+      }
+
+      function downloadCircuitSvg() {
+        const svg = circuitSvgWrap.querySelector("svg");
+        if (!svg) return;
+        const clone = svg.cloneNode(true);
+        if (!clone.getAttribute("xmlns")) {
+          clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+        }
+        const xml =
+          '<?xml version="1.0" encoding="UTF-8"?>\n' +
+          new XMLSerializer().serializeToString(clone);
+        const blob = new Blob([xml], { type: "image/svg+xml;charset=utf-8" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "mmode_circuit.svg";
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+
+      function downloadCircuitPng() {
+        const svg = circuitSvgWrap.querySelector("svg");
+        if (!svg) return;
+        const serialized = new XMLSerializer().serializeToString(svg);
+        const blob = new Blob([serialized], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+          let w = img.naturalWidth;
+          let h = img.naturalHeight;
+          if (!w || !h) {
+            w = parseFloat(svg.getAttribute("width")) || 800;
+            h = parseFloat(svg.getAttribute("height")) || 600;
+          }
+          const canvas = document.createElement("canvas");
+          const scale = 2;
+          canvas.width = Math.ceil(w * scale);
+          canvas.height = Math.ceil(h * scale);
+          const ctx = canvas.getContext("2d");
+          ctx.scale(scale, scale);
+          ctx.fillStyle = "#fafaf8";
+          ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob(
+            (b) => {
+              URL.revokeObjectURL(url);
+              if (!b) {
+                setStatus("PNG export failed (try SVG).", "error");
+                return;
+              }
+              const a = document.createElement("a");
+              a.href = URL.createObjectURL(b);
+              a.download = "mmode_circuit.png";
+              a.click();
+              URL.revokeObjectURL(a.href);
+            },
+            "image/png",
+            1.0
+          );
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          setStatus("Could not rasterize the circuit to PNG (try SVG).", "error");
+        };
+        img.src = url;
+      }
+
+      circuitShow.addEventListener("change", updateCircuitDiagramVisibility);
+      btnCircuitSvg.addEventListener("click", downloadCircuitSvg);
+      btnCircuitPng.addEventListener("click", downloadCircuitPng);
+
+      async function initPyodide() {
+        setStatus("Loading Pyodide (first time may take a minute)…");
+        pyodide = await loadPyodide({ indexURL: PYODIDE_URL });
+        await pyodide.loadPackage("numpy");
+        const resp = await fetch("mmode_core.py");
+        if (!resp.ok) throw new Error("Could not load mmode_core.py (use a local HTTP server).");
+        const src = await resp.text();
+        pyodide.FS.writeFile("/mmode_core.py", src);
+        await pyodide.runPythonAsync(`
+import importlib.util
+_spec = importlib.util.spec_from_file_location("mmode_core", "/mmode_core.py")
+mmode_core = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(mmode_core)
+`);
+        setStatus("Ready. Enter U or generate a random unitary, then run.", "ok");
+        btnRandom.disabled = false;
+        btnRun.disabled = false;
+      }
+
+      function parseTol() {
+        const t = parseFloat(tolEl.value, 10);
+        if (Number.isNaN(t) || t <= 0) throw new Error("tol must be a positive number");
+        return t;
+      }
+
+      btnRandom.addEventListener("click", () => {
+        if (!pyodide) return;
+        try {
+          const n = parseInt(nEl.value, 10);
+          if (n < 2 || n > 256) throw new Error("n must be between 2 and 256");
+          const seedRaw = seedEl.value.trim();
+          let seedPy = null;
+          if (seedRaw !== "") {
+            const si = parseInt(seedRaw, 10);
+            if (Number.isNaN(si)) throw new Error("Seed must be an integer or empty");
+            seedPy = si;
+          }
+          pyodide.globals.set("n_val", n);
+          pyodide.globals.set("seed_val", seedPy);
+          const s = pyodide.runPython("mmode_core.random_unitary_json(int(n_val), seed_val)");
+          matrixEl.value = s;
+          setStatus("Filled random unitary U (n=" + n + ").", "ok");
+        } catch (e) {
+          setStatus(String(e.message || e), "error");
+        }
+      });
+
+      btnRun.addEventListener("click", () => {
+        if (!pyodide) return;
+        try {
+          const m = parseInt(mEl.value, 10);
+          const tol = parseTol();
+          pyodide.globals.set("mj", matrixEl.value);
+          pyodide.globals.set("m_mode", m);
+          pyodide.globals.set("tol_v", tol);
+          const jsonStr = pyodide.runPython(
+            "mmode_core.api_decompose(mj, int(m_mode), float(tol_v))"
+          );
+          lastResultJson = jsonStr;
+          const data = JSON.parse(jsonStr);
+          btnDownload.disabled = false;
+          btnDownloadMatrices.disabled = false;
+
+          summaryBox.style.display = "block";
+          summaryEl.textContent =
+            "n=" +
+            data.n +
+            ", m=" +
+            data.m +
+            ", number of steps=" +
+            data.num_ops;
+
+          circuitBox.style.display = "block";
+          circuitSvgWrap.innerHTML = renderMmodeCircuitSVG(data.n, data.steps || []);
+          circuitShow.checked = true;
+          updateCircuitDiagramVisibility();
+          setCircuitDownloadEnabled(circuitSvgWrap.querySelector("svg") !== null);
+
+          stepsBox.style.display = "block";
+          stepsEl.innerHTML = "";
+          const maxShow = 40;
+          const steps = data.steps || [];
+          steps.slice(0, maxShow).forEach((st, i) => {
+            const div = document.createElement("div");
+            div.className = "step";
+            const nDim = st.Q_emd.length;
+            div.innerHTML =
+              "<h3>Step " +
+              (i + 1) +
+              " — cols = " +
+              JSON.stringify(st.cols) +
+              " — " +
+              qtdHtmlForStepIndex(i + 1) +
+              " is " +
+              nDim +
+              "×" +
+              (st.Q_emd[0] ? st.Q_emd[0].length : 0) +
+              "</h3>" +
+              renderComplexMatrixHTML(st.Q_emd);
+            stepsEl.appendChild(div);
+          });
+          if (steps.length > maxShow) {
+            const p = document.createElement("p");
+            p.className = "hint";
+            p.textContent =
+              "Showing first " +
+              maxShow +
+              " of " +
+              steps.length +
+              " steps. Use downloads for the complete list.";
+            stepsEl.appendChild(p);
+          }
+
+          dBox.style.display = "block";
+          dOut.innerHTML = renderComplexMatrixHTML(data.D);
+
+          setStatus("Done.", "ok");
+        } catch (e) {
+          lastResultJson = null;
+          btnDownload.disabled = true;
+          btnDownloadMatrices.disabled = true;
+          circuitBox.style.display = "none";
+          circuitSvgWrap.innerHTML = "";
+          setCircuitDownloadEnabled(false);
+          setStatus(String(e.message || e), "error");
+        }
+      });
+
+      function buildMatricesOnlyJson(data) {
+        return JSON.stringify(
+          {
+            description:
+              "m-mode decomposition: embedded \\tilde{Q}^{\\dagger} per step (field Q_emd) and D; complex entries as [re, im]",
+            n: data.n,
+            m: data.m,
+            num_steps: data.num_ops,
+            steps: (data.steps || []).map((st, i) => ({
+              step: i + 1,
+              cols: st.cols,
+              Q_emd: st.Q_emd,
+            })),
+            D: data.D,
+          },
+          null,
+          2
+        );
+      }
+
+      btnDownload.addEventListener("click", () => {
+        if (!lastResultJson) return;
+        const blob = new Blob([lastResultJson], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "mmode_decomposition_full.json";
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+
+      btnDownloadMatrices.addEventListener("click", () => {
+        if (!lastResultJson) return;
+        let data;
+        try {
+          data = JSON.parse(lastResultJson);
+        } catch (_) {
+          return;
+        }
+        const blob = new Blob([buildMatricesOnlyJson(data)], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "mmode_matrices.json";
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+
+      initPyodide().catch((e) => {
+        setStatus(
+          "Failed: " +
+            (e && e.message ? e.message : e) +
+            " — use HTTP (e.g. python -m http.server) so mmode_core.py can load.",
+          "error"
+        );
+      });
+    </script>
+  </body>
+</html>
